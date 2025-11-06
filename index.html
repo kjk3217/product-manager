@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>제품 사진 관리</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      color: #888;
+      font-size: 14px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 15px;
+      background: white;
+      border: none;
+      border-radius: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      color: #888;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .screen {
+      display: none;
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      animation: fadeIn 0.3s;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .camera-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: #f8f9fa;
+      border-radius: 15px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      border: 3px dashed #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .camera-placeholder {
+      text-align: center;
+      color: #aaa;
+    }
+
+    .camera-placeholder svg {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 10px;
+      opacity: 0.3;
+    }
+
+    #preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    #preview.show {
+      display: block;
+    }
+
+    .camera-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      margin-bottom: 15px;
+    }
+
+    .camera-btn:active {
+      transform: scale(0.98);
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+      font-size: 14px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .save-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .save-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .save-btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .product-card {
+      position: relative;
+      aspect-ratio: 1;
+      background: #f8f9fa;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .product-card:active {
+      transform: scale(0.95);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .product-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      padding: 10px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loading.show {
+      display: block;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .message {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 25px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: none;
+      font-weight: 600;
+      animation: slideDown 0.3s;
+      max-width: 90%;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      background: #4caf50;
+      color: white;
+    }
+
+    .message.error {
+      background: #f44336;
+      color: white;
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translate(-50%, -100%);
+      }
+      to {
+        transform: translate(-50%, 0);
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #aaa;
+    }
+
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 15px;
+      opacity: 0.3;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: center;
+      animation: zoomIn 0.3s;
+    }
+
+    @keyframes zoomIn {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-content img {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .modal-info {
+      margin: 15px 0;
+    }
+
+    .modal-info h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .modal-info p {
+      font-size: 18px;
+      color: #555;
+      margin: 5px 0;
+    }
+
+    .close-modal {
+      width: 100%;
+      padding: 15px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e9ecef;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      display: none;
+    }
+
+    .progress-bar.show {
+      display: block;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .search-box {
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔥 제품 관리</h1>
+      <p>빠르고 편리한 Firebase</p>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="switchScreen('register')">
+        📷 등록
+      </button>
+      <button class="nav-btn" onclick="switchScreen('list')">
+        📋 목록
+      </button>
+    </div>
+
+    <!-- 등록 화면 -->
+    <div id="registerScreen" class="screen active">
+      <div class="camera-container" id="cameraContainer">
+        <div class="camera-placeholder">
+          <svg fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+          </svg>
+          <p>사진을 촬영해주세요</p>
+        </div>
+        <img id="preview" alt="preview">
+      </div>
+
+      <input type="file" id="fileInput" accept="image/*" capture="environment">
+      <button class="camera-btn" onclick="document.getElementById('fileInput').click()">
+        📸 사진 촬영
+      </button>
+
+      <div class="input-group">
+        <label>제품코드</label>
+        <input type="text" id="productCode" placeholder="제품코드를 입력하세요">
+      </div>
+
+      <div class="input-group">
+        <label>소비자가격</label>
+        <input type="number" id="price" placeholder="가격을 입력하세요">
+      </div>
+
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <button class="save-btn" id="saveBtn" onclick="saveProduct()">
+        💾 저장하기
+      </button>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>저장 중입니다...</p>
+      </div>
+    </div>
+
+    <!-- 목록 화면 -->
+    <div id="listScreen" class="screen">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 제품코드로 검색..." onkeyup="filterProducts()">
+      </div>
+      
+      <div class="loading" id="listLoading">
+        <div class="spinner"></div>
+        <p>불러오는 중...</p>
+      </div>
+      <div id="productList" class="product-grid"></div>
+    </div>
+  </div>
+
+  <!-- 메시지 알림 -->
+  <div class="message" id="message"></div>
+
+  <!-- 상세보기 모달 -->
+  <div class="modal" id="modal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <img id="modalImage" alt="product">
+      <div class="modal-info">
+        <h3>제품 정보</h3>
+        <p><strong>제품코드:</strong> <span id="modalCode"></span></p>
+        <p><strong>소비자가격:</strong> <span id="modalPrice"></span>원</p>
+      </div>
+      <button class="close-modal" onclick="closeModal()">닫기</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase 설정 -->
+  <script>
+    // ⚠️ 여기에 Firebase 설정을 붙여넣으세요!
+    const firebaseConfig = {
+    apiKey: "AIzaSyAh_q5JohkauyGSqQ9-namU3rcgEo7jyik",
+    authDomain: "product-manager-b3c76.firebaseapp.com",
+    projectId: "product-manager-b3c76",
+    storageBucket: "product-manager-b3c76.firebasestorage.app",
+    messagingSenderId: "304854388503",
+    appId: "1:304854388503:web:74bcccdb12bcb3cc693152"
+  };
+
+    // Firebase 초기화
+    firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
+    const db = firebase.firestore();
+
+    let capturedImage = null;
+    let allProducts = [];
+
+    // 파일 선택 시 미리보기
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        compressImage(file, 800, 0.8).then(compressedFile => {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            capturedImage = compressedFile;
+            const preview = document.getElementById('preview');
+            preview.src = event.target.result;
+            preview.classList.add('show');
+            document.querySelector('.camera-placeholder').style.display = 'none';
+          };
+          reader.readAsDataURL(compressedFile);
+        });
+      }
+    });
+
+    // 이미지 압축
+    function compressImage(file, maxWidth, quality) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+              height = (height * maxWidth) / width;
+              width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              resolve(new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              }));
+            }, 'image/jpeg', quality);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 화면 전환
+    function switchScreen(screen) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+      if (screen === 'register') {
+        document.getElementById('registerScreen').classList.add('active');
+        document.querySelectorAll('.nav-btn')[0].classList.add('active');
+      } else {
+        document.getElementById('listScreen').classList.add('active');
+        document.querySelectorAll('.nav-btn')[1].classList.add('active');
+        loadProducts();
+      }
+    }
+
+    // 제품 저장
+    async function saveProduct() {
+      const productCode = document.getElementById('productCode').value.trim();
+      const price = document.getElementById('price').value.trim();
+
+      if (!capturedImage) {
+        showMessage('사진을 촬영해주세요!', 'error');
+        return;
+      }
+
+      if (!productCode) {
+        showMessage('제품코드를 입력해주세요!', 'error');
+        return;
+      }
+
+      if (!price) {
+        showMessage('가격을 입력해주세요!', 'error');
+        return;
+      }
+
+      try {
+        document.getElementById('loading').classList.add('show');
+        document.getElementById('progressBar').classList.add('show');
+        document.getElementById('saveBtn').disabled = true;
+
+        // Storage에 이미지 업로드
+        const storageRef = storage.ref(`products/${productCode}.jpg`);
+        const uploadTask = storageRef.put(capturedImage);
+
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+          },
+          (error) => {
+            console.error('Upload error:', error);
+            showMessage('업로드 실패: ' + error.message, 'error');
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('progressBar').classList.remove('show');
+            document.getElementById('saveBtn').disabled = false;
+          },
+          async () => {
+            // 업로드 완료
+            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+
+            // Firestore에 정보 저장
+            await db.collection('products').doc(productCode).set({
+              productCode: productCode,
+              price: parseInt(price),
+              imageUrl: downloadURL,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('progressBar').classList.remove('show');
+            document.getElementById('saveBtn').disabled = false;
+
+            showMessage('제품이 성공적으로 등록되었습니다! 🎉', 'success');
+            resetForm();
+          }
+        );
+
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('저장 실패: ' + error.message, 'error');
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('progressBar').classList.remove('show');
+        document.getElementById('saveBtn').disabled = false;
+      }
+    }
+
+    // 폼 초기화
+    function resetForm() {
+      capturedImage = null;
+      document.getElementById('preview').classList.remove('show');
+      document.getElementById('preview').src = '';
+      document.querySelector('.camera-placeholder').style.display = 'flex';
+      document.getElementById('productCode').value = '';
+      document.getElementById('price').value = '';
+      document.getElementById('fileInput').value = '';
+      document.getElementById('progressFill').style.width = '0%';
+    }
+
+    // 제품 목록 불러오기
+    async function loadProducts() {
+      try {
+        document.getElementById('listLoading').classList.add('show');
+        document.getElementById('productList').innerHTML = '';
+
+        const snapshot = await db.collection('products').orderBy('timestamp', 'desc').get();
+        allProducts = [];
+
+        snapshot.forEach(doc => {
+          allProducts.push(doc.data());
+        });
+
+        document.getElementById('listLoading').classList.remove('show');
+        displayProducts(allProducts);
+
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('listLoading').classList.remove('show');
+        showMessage('목록 불러오기 실패', 'error');
+      }
+    }
+
+    // 제품 검색
+    function filterProducts() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      
+      if (searchTerm === '') {
+        displayProducts(allProducts);
+      } else {
+        const filtered = allProducts.filter(product => 
+          product.productCode.toLowerCase().includes(searchTerm)
+        );
+        displayProducts(filtered);
+      }
+    }
+
+    // 제품 목록 표시
+    function displayProducts(products) {
+      const container = document.getElementById('productList');
+
+      if (products.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+            </svg>
+            <p>등록된 제품이 없습니다</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      products.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.onclick = () => showProductDetail(product);
+
+        card.innerHTML = `
+          <img src="${product.imageUrl}" alt="${product.productCode}" loading="lazy">
+          <div class="product-info">
+            ${product.productCode}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // 제품 상세 보기
+    function showProductDetail(product) {
+      const modal = document.getElementById('modal');
+
+      document.getElementById('modalImage').src = product.imageUrl;
+      document.getElementById('modalCode').textContent = product.productCode;
+      document.getElementById('modalPrice').textContent = Number(product.price).toLocaleString();
+
+      modal.classList.add('show');
+    }
+
+    // 모달 닫기
+    function closeModal() {
+      document.getElementById('modal').classList.remove('show');
+    }
+
+    // 메시지 표시
+    function showMessage(text, type) {
+      const message = document.getElementById('message');
+      message.textContent = text;
+      message.className = 'message show ' + type;
+
+      setTimeout(() => {
+        message.classList.remove('show');
+      }, 3000);
+    }
+
+    // 페이지 로드 시 확인
+    window.addEventListener('load', () => {
+      if (firebaseConfig.apiKey === "여기에_API_KEY_입력") {
+        showMessage('⚠️ Firebase 설정을 완료해주세요!', 'error');
+      }
+    });
+  </script>
+</body>
+</html>
