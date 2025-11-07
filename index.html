@@ -191,9 +191,89 @@
       transform: scale(0.98);
     }
 
+    /* 목록 화면 검색 컨테이너 스타일 */
+    .search-container-list {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .search-box-list {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .search-box-list input {
+      width: 100%;
+      padding: 20px 20px 20px 55px;
+      border: 3px solid #e9ecef;
+      border-radius: 15px;
+      font-size: 20px;
+      transition: all 0.3s;
+    }
+
+    .search-box-list input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon-list {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 24px;
+      color: #667eea;
+    }
+
+    .stats-list {
+      display: flex;
+      justify-content: space-around;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+    }
+
+    .stat-item-list {
+      text-align: center;
+    }
+
+    .stat-number-list {
+      font-size: 28px;
+      font-weight: 700;
+      color: #667eea;
+      display: block;
+    }
+
+    .stat-label-list {
+      font-size: 16px;
+      color: #888;
+      margin-top: 5px;
+    }
+
+    .refresh-btn-list {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border: none;
+      border-radius: 15px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: all 0.3s;
+      box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .refresh-btn-list:active {
+      transform: scale(0.98);
+    }
+
     .product-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 15px;
       margin-top: 20px;
     }
@@ -224,11 +304,21 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-      padding: 12px;
+      background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+      padding: 15px;
       color: white;
-      font-size: 16px;
+    }
+
+    .product-code {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .product-price {
+      font-size: 20px;
       font-weight: 600;
+      opacity: 0.95;
     }
 
     .loading {
@@ -314,6 +404,23 @@
     }
 
     .empty-state p {
+      font-size: 18px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 40px 20px;
+      color: #888;
+    }
+
+    .no-results svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 15px;
+      opacity: 0.3;
+    }
+
+    .no-results p {
       font-size: 18px;
     }
 
@@ -415,24 +522,6 @@
       width: 0%;
       transition: width 0.3s;
     }
-
-    .search-box {
-      margin-bottom: 20px;
-    }
-
-    .search-box input {
-      width: 100%;
-      padding: 18px;
-      border: 2px solid #e9ecef;
-      border-radius: 12px;
-      font-size: 20px;
-    }
-
-    .search-box input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
   </style>
 </head>
 <body>
@@ -489,9 +578,33 @@
 
     <!-- 목록 화면 -->
     <div id="listScreen" class="screen">
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 제품코드로 검색..." onkeyup="filterProducts()">
+      <div class="search-container-list">
+        <div class="search-box-list">
+          <span class="search-icon-list">🔍</span>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="제품코드로 검색하세요..." 
+            onkeyup="filterProducts()"
+            autocomplete="off"
+          >
+        </div>
+        
+        <div class="stats-list">
+          <div class="stat-item-list">
+            <span class="stat-number-list" id="totalCount">0</span>
+            <span class="stat-label-list">전체 제품</span>
+          </div>
+          <div class="stat-item-list">
+            <span class="stat-number-list" id="displayCount">0</span>
+            <span class="stat-label-list">검색 결과</span>
+          </div>
+        </div>
       </div>
+
+      <button class="refresh-btn-list" onclick="loadProducts()">
+        🔄 새로고침
+      </button>
       
       <div class="loading" id="listLoading">
         <div class="spinner"></div>
@@ -706,6 +819,7 @@
         });
 
         document.getElementById('listLoading').classList.remove('show');
+        document.getElementById('totalCount').textContent = allProducts.length;
         displayProducts(allProducts);
 
       } catch (error) {
@@ -717,15 +831,17 @@
 
     // 제품 검색
     function filterProducts() {
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
       
       if (searchTerm === '') {
         displayProducts(allProducts);
+        document.getElementById('displayCount').textContent = allProducts.length;
       } else {
         const filtered = allProducts.filter(product => 
           product.productCode.toLowerCase().includes(searchTerm)
         );
         displayProducts(filtered);
+        document.getElementById('displayCount').textContent = filtered.length;
       }
     }
 
@@ -734,14 +850,29 @@
       const container = document.getElementById('productList');
 
       if (products.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <svg fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
-            </svg>
-            <p>등록된 제품이 없습니다</p>
-          </div>
-        `;
+        const searchTerm = document.getElementById('searchInput').value.trim();
+        
+        if (searchTerm) {
+          // 검색 결과 없음
+          container.innerHTML = `
+            <div class="no-results">
+              <svg fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+              </svg>
+              <p>'${searchTerm}'에 대한<br>검색 결과가 없습니다</p>
+            </div>
+          `;
+        } else {
+          // 등록된 제품 없음
+          container.innerHTML = `
+            <div class="empty-state">
+              <svg fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+              </svg>
+              <p>등록된 제품이 없습니다</p>
+            </div>
+          `;
+        }
         return;
       }
 
@@ -754,7 +885,8 @@
         card.innerHTML = `
           <img src="${product.imageUrl}" alt="${product.productCode}" loading="lazy">
           <div class="product-info">
-            ${product.productCode}
+            <div class="product-code">${product.productCode}</div>
+            <div class="product-price">${Number(product.price).toLocaleString()}원</div>
           </div>
         `;
 
